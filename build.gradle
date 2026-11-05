@@ -1,0 +1,81 @@
+plugins {
+  id 'java-library'
+  id 'io.freefair.lombok' version '9.8.0'
+  id 'com.diffplug.spotless' version '8.10.4'
+}
+
+sourceSets {
+  main {
+    java.srcDirs = ['src/main']
+    resources.srcDirs = ['src/resources']
+  }
+  test {
+    java.srcDirs = ['src/test']
+  }
+}
+
+repositories {
+  // The SDK is used through its published builds; its publishToMavenLocal makes a snapshot available
+  mavenLocal()
+  mavenCentral()
+}
+
+java {
+  withSourcesJar()
+  withJavadocJar()
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(25)
+  }
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc).configureEach {
+  options.encoding = 'UTF-8'
+  options.tags('apiNote:a:API Note:', 'implSpec:a:Implementation Requirements:', 'implNote:a:Implementation Note:')
+}
+
+tasks.named('javadoc') {
+  source(sourceSets.main.output.generatedSourcesDirs)
+  dependsOn(tasks.named('compileJava'))
+}
+
+check.dependsOn(javadoc)
+
+lombok {
+  version = '1.18.42'
+}
+
+dependencies {
+  api("cat.tabbie:tabbie-sdk:${sdkVersion}")
+
+  // The SDK's processors check this module's contributions and generate its registration
+  annotationProcessor("cat.tabbie:tabbie-sdk:${sdkVersion}")
+}
+
+spotless {
+  java {
+    target 'src/**/*.java'
+    targetExclude 'src/**/external/**/*.java', 'src/resources/**/*.java'
+
+    toggleOffOn()
+    removeUnusedImports()
+    importOrder('com', 'org', 'java', '', '#').wildcardsLast()
+    setEncoding('UTF-8')
+    leadingTabsToSpaces(2)
+    trimTrailingWhitespace()
+    endWithNewline()
+  }
+
+  groovyGradle {
+    target '*.gradle'
+
+    greclipse()
+    leadingTabsToSpaces(2)
+    trimTrailingWhitespace()
+    endWithNewline()
+  }
+}
+build.dependsOn(spotlessApply)
