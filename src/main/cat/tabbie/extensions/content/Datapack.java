@@ -8,7 +8,7 @@ import java.util.Set;
 import cat.tabbie.sdk.catalog.Coordinate;
 import cat.tabbie.sdk.content.Artifact;
 import cat.tabbie.sdk.content.Install;
-import cat.tabbie.sdk.meta.attribute.Distributions;
+import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
 import cat.tabbie.sdk.model.Violation;
 import cat.tabbie.sdk.platform.Describe;
@@ -23,7 +23,7 @@ import lombok.NonNull;
  * discover world directories.
  */
 @Registered
-@Distributions("java:base")
+@Applies(to = "java:base")
 public sealed interface Datapack extends Artifact {
 
   /**

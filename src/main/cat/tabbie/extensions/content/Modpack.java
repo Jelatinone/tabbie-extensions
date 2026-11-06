@@ -6,7 +6,7 @@ import java.util.Set;
 import cat.tabbie.sdk.catalog.Coordinate;
 import cat.tabbie.sdk.content.Artifact;
 import cat.tabbie.sdk.content.Install;
-import cat.tabbie.sdk.meta.attribute.Distributions;
+import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
 import cat.tabbie.sdk.model.Violation;
 import cat.tabbie.sdk.platform.Describe;
@@ -27,7 +27,7 @@ import lombok.NonNull;
  * CurseForge's, need an importer rather than this artifact.
  */
 @Registered
-@Distributions({"java:vanilla", "java:launcher", "bedrock:base"})
+@Applies(to = {"java:vanilla", "java:launcher", "bedrock:base"})
 public sealed interface Modpack extends Artifact {
 
   /**

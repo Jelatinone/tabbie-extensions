@@ -12,8 +12,7 @@ import cat.tabbie.sdk.catalog.Coordinate;
 import cat.tabbie.sdk.content.Artifact;
 import cat.tabbie.sdk.content.Install;
 import cat.tabbie.sdk.form.Form;
-import cat.tabbie.sdk.meta.attribute.Distributions;
-import cat.tabbie.sdk.meta.attribute.Environments;
+import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
 import cat.tabbie.sdk.model.Violation;
 import cat.tabbie.sdk.plate.Archive;
@@ -39,8 +38,7 @@ public sealed interface Resourcepack extends Artifact {
    * alone, and their layouts accept none.
    */
   @Registered
-  @Distributions("java:base")
-  @Environments(CLIENT)
+  @Applies(to = "java:base", environments = CLIENT)
   sealed interface Java extends Resourcepack {
 
     /**
@@ -147,7 +145,7 @@ public sealed interface Resourcepack extends Artifact {
      *                                     list to be created and edited
      */
     @Install
-    @Distributions({"bedrock:vanilla", "bedrock:endstone"})
+    @Applies(to = {"bedrock:vanilla", "bedrock:endstone"})
     default Set<Image<?>> installListedRoot(@NonNull Install.Context context) throws IOException {
       List<Archive.Entry> entries = context.archive().inspect(source(), context.plate());
       Manifest manifest = Manifest.in(entries);
@@ -185,7 +183,7 @@ public sealed interface Resourcepack extends Artifact {
      *                                       the pack where it goes
      */
     @Install
-    @Distributions({"bedrock:cloudburst", "bedrock:nukkit-mot"})
+    @Applies(to = {"bedrock:cloudburst", "bedrock:nukkit-mot"})
     default Set<Image<?>> installUnpackedRoot(@NonNull Install.Context context) throws IOException {
       List<Archive.Entry> entries = context.archive().inspect(source(), context.plate());
       Manifest manifest = Manifest.in(entries)
@@ -220,7 +218,7 @@ public sealed interface Resourcepack extends Artifact {
      *                                       resource packs
      */
     @Install
-    @Distributions({"bedrock:cloudburst-nukkit", "bedrock:power-nukkit"})
+    @Applies(to = {"bedrock:cloudburst-nukkit", "bedrock:power-nukkit"})
     default Set<Image<?>> installArchivedRoot(@NonNull Install.Context context) throws IOException {
       Manifest.in(context.archive().inspect(source(), context.plate()))
           .requireDepth(1)
