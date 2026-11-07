@@ -147,7 +147,7 @@ public sealed interface Resourcepack extends Artifact {
     @Install
     @Applies(to = {"bedrock:vanilla", "bedrock:endstone"})
     default Set<Image<?>> installListedRoot(@NonNull Install.Context context) throws IOException {
-      List<Archive.Entry> entries = context.archive().inspect(source(), context.plate());
+      List<Archive.Entry> entries = context.capture().inspect(source());
       Manifest manifest = Manifest.in(entries);
       List<Chunk> entry = List.of(manifest.listed());
 
@@ -185,7 +185,7 @@ public sealed interface Resourcepack extends Artifact {
     @Install
     @Applies(to = {"bedrock:cloudburst", "bedrock:nukkit-mot"})
     default Set<Image<?>> installUnpackedRoot(@NonNull Install.Context context) throws IOException {
-      List<Archive.Entry> entries = context.archive().inspect(source(), context.plate());
+      List<Archive.Entry> entries = context.capture().inspect(source());
       Manifest manifest = Manifest.in(entries)
           .requireNumbered();
       return context.place().unpack(entries, manifest.root(), artifactId().id().toString());
@@ -220,7 +220,7 @@ public sealed interface Resourcepack extends Artifact {
     @Install
     @Applies(to = {"bedrock:cloudburst-nukkit", "bedrock:power-nukkit"})
     default Set<Image<?>> installArchivedRoot(@NonNull Install.Context context) throws IOException {
-      Manifest.in(context.archive().inspect(source(), context.plate()))
+      Manifest.in(context.capture().inspect(source()))
           .requireDepth(1)
           .requireNumbered();
       return context.place().file(source(), Address.of(String.format("%s.mcpack", artifactId().id())));

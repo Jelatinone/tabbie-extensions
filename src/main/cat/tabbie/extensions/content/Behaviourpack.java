@@ -75,7 +75,7 @@ public sealed interface Behaviourpack extends Artifact {
   @Install(NAMESPACES)
   @Applies(to = {"bedrock:vanilla", "bedrock:endstone"})
   default Set<Image<?>> installListedNamespaces(@NonNull Install.Context context) throws IOException {
-    List<Archive.Entry> entries = context.archive().inspect(source(), context.plate());
+    List<Archive.Entry> entries = context.capture().inspect(source());
     Manifest manifest = Manifest.in(entries);
     List<Chunk> entry = List.of(manifest.listed());
 
@@ -114,7 +114,7 @@ public sealed interface Behaviourpack extends Artifact {
   @Install
   @Applies(to = "bedrock:nukkit-mot")
   default Set<Image<?>> installUnpackedRoot(@NonNull Install.Context context) throws IOException {
-    List<Archive.Entry> entries = context.archive().inspect(source(), context.plate());
+    List<Archive.Entry> entries = context.capture().inspect(source());
     Manifest manifest = Manifest.in(entries)
         .requireNumbered();
     return context.place().unpack(entries, manifest.root(), artifactId().id().toString());
