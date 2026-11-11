@@ -10,12 +10,12 @@ import java.util.stream.Stream;
 
 import cat.tabbie.sdk.catalog.Coordinate;
 import cat.tabbie.sdk.content.Artifact;
+import cat.tabbie.sdk.content.Capture;
 import cat.tabbie.sdk.content.Install;
-import cat.tabbie.sdk.form.Form;
+import cat.tabbie.sdk.form.Json;
 import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
 import cat.tabbie.sdk.model.Violation;
-import cat.tabbie.sdk.plate.Archive;
 import cat.tabbie.sdk.platform.Address;
 import cat.tabbie.sdk.platform.Describe;
 import cat.tabbie.sdk.revision.Chunk;
@@ -135,7 +135,7 @@ public sealed interface Resourcepack extends Artifact {
      * @param context the work, its Worlds, and where Bedrock resource packs
      *                go in the Cat
      * @return validated immutable images
-     * @throws Archive.Rejection.Malformed when the pack does not hold
+     * @throws Capture.Rejection.Malformed when the pack does not hold
      *                                     exactly one manifest, or its
      *                                     manifest declares no identity
      * @throws IOException                 when the pack cannot be captured
@@ -147,14 +147,14 @@ public sealed interface Resourcepack extends Artifact {
     @Install
     @Applies(to = {"bedrock:vanilla", "bedrock:endstone"})
     default Set<Image<?>> installListedRoot(@NonNull Install.Context context) throws IOException {
-      List<Archive.Entry> entries = context.capture().inspect(source());
+      List<Capture.Entry> entries = context.capture().inspect(source());
       Manifest manifest = Manifest.in(entries);
       List<Chunk> entry = List.of(manifest.listed());
 
       Set<Image<?>> files = context.place().unpack(entries, manifest.root(), artifactId().id().toString());
       Set<Image<?>> listings = context.worlds().stream()
           .<Image<?>>map(world -> world.namespace().configure(Address.of(CONFIGURATION_JSON_FILE_NAME),
-              new Form.Json(), entry))
+              new Json(), entry))
           .collect(Collectors.toUnmodifiableSet());
       return Stream.concat(files.stream(), listings.stream())
           .collect(Collectors.toUnmodifiableSet());
@@ -172,10 +172,10 @@ public sealed interface Resourcepack extends Artifact {
      *
      * @param context the work, and where Bedrock resource packs go in the Cat
      * @return validated immutable images
-     * @throws Archive.Rejection.Malformed   when the pack does not hold
+     * @throws Capture.Rejection.Malformed   when the pack does not hold
      *                                       exactly one manifest, or its
      *                                       manifest declares no identity
-     * @throws Archive.Rejection.Unsupported when the manifest writes the
+     * @throws Capture.Rejection.Unsupported when the manifest writes the
      *                                       pack's version as a string
      * @throws IOException                   when the pack cannot be captured
      *                                       or is refused
@@ -185,7 +185,7 @@ public sealed interface Resourcepack extends Artifact {
     @Install
     @Applies(to = {"bedrock:cloudburst", "bedrock:nukkit-mot"})
     default Set<Image<?>> installUnpackedRoot(@NonNull Install.Context context) throws IOException {
-      List<Archive.Entry> entries = context.capture().inspect(source());
+      List<Capture.Entry> entries = context.capture().inspect(source());
       Manifest manifest = Manifest.in(entries)
           .requireNumbered();
       return context.place().unpack(entries, manifest.root(), artifactId().id().toString());
@@ -203,10 +203,10 @@ public sealed interface Resourcepack extends Artifact {
      *
      * @param context the work, and where Bedrock resource packs go in the Cat
      * @return validated immutable images
-     * @throws Archive.Rejection.Malformed   when the pack does not hold
+     * @throws Capture.Rejection.Malformed   when the pack does not hold
      *                                       exactly one manifest, or its
      *                                       manifest declares no identity
-     * @throws Archive.Rejection.Unsupported when the manifest lies more than
+     * @throws Capture.Rejection.Unsupported when the manifest lies more than
      *                                       one folder deep, or writes the
      *                                       pack's version as a string
      * @throws IOException                   when the pack cannot be captured

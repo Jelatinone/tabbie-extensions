@@ -5,9 +5,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import cat.tabbie.sdk.content.Capture;
 import cat.tabbie.sdk.content.Descriptor;
-import cat.tabbie.sdk.form.Form;
-import cat.tabbie.sdk.plate.Archive;
+import cat.tabbie.sdk.form.Json;
+import cat.tabbie.sdk.form.Unreadable;
 import cat.tabbie.sdk.platform.Address;
 import cat.tabbie.sdk.platform.Describe;
 import lombok.NonNull;
@@ -60,16 +61,16 @@ public record Packmeta(
    * @param meta the pack's {@code pack.mcmeta}, at its path within the
    *             pack's archive or directory
    * @return the declared formats and description
-   * @throws Archive.Rejection.Malformed when the file is not JSON, or
+   * @throws Capture.Rejection.Malformed when the file is not JSON, or
    *                                     declares no formats it supports
    * @throws IOException                 when the file cannot be read
    */
   public static Packmeta of(@NonNull Describe meta) throws IOException {
     JsonNode pack;
     try {
-      pack = new Form.Json().readTree(meta).path("pack");
-    } catch (Form.Unreadable unreadable) {
-      throw new Archive.Rejection.Malformed("A pack's pack.mcmeta is not readable JSON.", unreadable);
+      pack = new Json().readTree(meta).path("pack");
+    } catch (Unreadable unreadable) {
+      throw new Capture.Rejection.Malformed("A pack's pack.mcmeta is not readable JSON.", unreadable);
     }
     try {
       Address root = meta.path().parent().orElse(Address.root());
@@ -89,7 +90,7 @@ public record Packmeta(
       Format only = Format.of(supported.isMissingNode() ? pack.path("pack_format") : supported);
       return new Packmeta(root, only, only, pack.path("description"));
     } catch (IllegalArgumentException exception) {
-      throw new Archive.Rejection.Malformed("A pack's pack.mcmeta declares the formats it supports.", exception);
+      throw new Capture.Rejection.Malformed("A pack's pack.mcmeta declares the formats it supports.", exception);
     }
   }
 
@@ -101,17 +102,17 @@ public record Packmeta(
    *
    * @param entries file entries of the pack's archive
    * @return the declared formats and description, and where the pack lies
-   * @throws Archive.Rejection.Malformed when the archive holds no
+   * @throws Capture.Rejection.Malformed when the archive holds no
    *                                     {@code pack.mcmeta} or several, or
    *                                     the file is malformed
    * @throws IOException                 when the file cannot be read
    */
-  public static Packmeta in(@NonNull List<Archive.Entry> entries) throws IOException {
-    List<Archive.Entry> metas = entries.stream()
+  public static Packmeta in(@NonNull List<Capture.Entry> entries) throws IOException {
+    List<Capture.Entry> metas = entries.stream()
         .filter(entry -> entry.path().fileName().equals(Optional.of(FILE)))
         .toList();
     if (metas.size() != 1) {
-      throw new Archive.Rejection.Malformed("A pack declares exactly one pack.mcmeta.", null);
+      throw new Capture.Rejection.Malformed("A pack declares exactly one pack.mcmeta.", null);
     }
     return of(metas.getFirst());
   }

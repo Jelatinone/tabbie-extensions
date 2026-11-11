@@ -5,9 +5,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import cat.tabbie.sdk.content.Capture;
 import cat.tabbie.sdk.content.Descriptor;
-import cat.tabbie.sdk.form.Form;
-import cat.tabbie.sdk.plate.Archive;
+import cat.tabbie.sdk.form.Json;
+import cat.tabbie.sdk.form.Unreadable;
 import cat.tabbie.sdk.platform.Address;
 import cat.tabbie.sdk.platform.Describe;
 import cat.tabbie.sdk.revision.Chunk;
@@ -52,7 +53,7 @@ public record Manifest(@NonNull Address root, @NonNull UUID uuid, @NonNull JsonN
    * @param manifest the pack's manifest, at its path within the pack's
    *                 archive or directory
    * @return the declared identity and version
-   * @throws Archive.Rejection.Malformed when the manifest is not JSON, or
+   * @throws Capture.Rejection.Malformed when the manifest is not JSON, or
    *                                     declares no uuid and version in its
    *                                     header
    * @throws IOException                 when the manifest cannot be read
@@ -60,15 +61,15 @@ public record Manifest(@NonNull Address root, @NonNull UUID uuid, @NonNull JsonN
   public static Manifest of(@NonNull Describe manifest) throws IOException {
     JsonNode header;
     try {
-      header = new Form.Json().readTree(manifest).path("header");
-    } catch (Form.Unreadable unreadable) {
-      throw new Archive.Rejection.Malformed("A pack's manifest is not readable JSON.", unreadable);
+      header = new Json().readTree(manifest).path("header");
+    } catch (Unreadable unreadable) {
+      throw new Capture.Rejection.Malformed("A pack's manifest is not readable JSON.", unreadable);
     }
     try {
       return new Manifest(manifest.path().parent().orElse(Address.root()),
           UUID.fromString(header.path("uuid").asString()), header.path("version"));
     } catch (IllegalArgumentException exception) {
-      throw new Archive.Rejection.Malformed("A pack's manifest declares its uuid and version.", exception);
+      throw new Capture.Rejection.Malformed("A pack's manifest declares its uuid and version.", exception);
     }
   }
 
@@ -78,17 +79,17 @@ public record Manifest(@NonNull Address root, @NonNull UUID uuid, @NonNull JsonN
    *
    * @param entries file entries of the pack's archive
    * @return the declared identity and version, and where the pack lies
-   * @throws Archive.Rejection.Malformed when the archive holds no manifest
+   * @throws Capture.Rejection.Malformed when the archive holds no manifest
    *                                     or several, as a bundle of packs
    *                                     does, or the manifest is malformed
    * @throws IOException                 when the manifest cannot be read
    */
-  public static Manifest in(@NonNull List<Archive.Entry> entries) throws IOException {
-    List<Archive.Entry> manifests = entries.stream()
+  public static Manifest in(@NonNull List<Capture.Entry> entries) throws IOException {
+    List<Capture.Entry> manifests = entries.stream()
         .filter(entry -> entry.path().fileName().equals(Optional.of(FILE)))
         .toList();
     if (manifests.size() != 1) {
-      throw new Archive.Rejection.Malformed("A pack declares exactly one manifest.", null);
+      throw new Capture.Rejection.Malformed("A pack declares exactly one manifest.", null);
     }
     return of(manifests.getFirst());
   }
@@ -100,12 +101,12 @@ public record Manifest(@NonNull Address root, @NonNull UUID uuid, @NonNull JsonN
    * not load is never installed.
    *
    * @return this manifest
-   * @throws Archive.Rejection.Unsupported when the version is a string, as
+   * @throws Capture.Rejection.Unsupported when the version is a string, as
    *                                       manifest format 3 writes it
    */
-  public Manifest requireNumbered() throws Archive.Rejection.Unsupported {
+  public Manifest requireNumbered() throws Capture.Rejection.Unsupported {
     if (version.isString()) {
-      throw new Archive.Rejection.Unsupported(String.format("The manifest at %s writes the pack's version as a "
+      throw new Capture.Rejection.Unsupported(String.format("The manifest at %s writes the pack's version as a "
           + "string, which the distribution cannot read.", root.resolve(FILE).canonical()));
     }
     return this;
@@ -120,11 +121,11 @@ public record Manifest(@NonNull Address root, @NonNull UUID uuid, @NonNull JsonN
    * @param depth most folders the manifest may lie in, zero for the pack's
    *              root
    * @return this manifest
-   * @throws Archive.Rejection.Unsupported when it lies deeper
+   * @throws Capture.Rejection.Unsupported when it lies deeper
    */
-  public Manifest requireDepth(int depth) throws Archive.Rejection.Unsupported {
+  public Manifest requireDepth(int depth) throws Capture.Rejection.Unsupported {
     if (root.components().size() > depth) {
-      throw new Archive.Rejection.Unsupported(String.format("The manifest at %s lies more than %d folders deep, "
+      throw new Capture.Rejection.Unsupported(String.format("The manifest at %s lies more than %d folders deep, "
           + "where the distribution does not find it.", root.resolve(FILE).canonical(), depth));
     }
     return this;
@@ -139,7 +140,7 @@ public record Manifest(@NonNull Address root, @NonNull UUID uuid, @NonNull JsonN
    */
   @NonNull
   public Chunk listed() {
-    Form.Json form = new Form.Json();
+    Json form = new Json();
     ObjectNode entry = form.mapper().createObjectNode()
         .put("pack_id", uuid.toString())
         .set("version", version);
