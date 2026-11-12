@@ -9,8 +9,8 @@ import cat.tabbie.sdk.content.Capture;
 import cat.tabbie.sdk.content.Descriptor;
 import cat.tabbie.sdk.form.Json;
 import cat.tabbie.sdk.form.Unreadable;
-import cat.tabbie.sdk.platform.Address;
 import cat.tabbie.sdk.platform.Describe;
+import cat.tabbie.sdk.tree.Address;
 import lombok.NonNull;
 import tools.jackson.databind.JsonNode;
 

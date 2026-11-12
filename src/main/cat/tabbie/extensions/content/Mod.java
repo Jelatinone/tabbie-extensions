@@ -8,11 +8,11 @@ import cat.tabbie.sdk.content.Artifact;
 import cat.tabbie.sdk.content.Install;
 import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
-import cat.tabbie.sdk.model.Violation;
 import cat.tabbie.sdk.platform.Describe;
 import cat.tabbie.sdk.revision.Image;
 import cat.tabbie.sdk.target.Label;
 import cat.tabbie.sdk.target.Parity;
+import cat.tabbie.sdk.tree.Violation;
 import lombok.NonNull;
 
 /**
