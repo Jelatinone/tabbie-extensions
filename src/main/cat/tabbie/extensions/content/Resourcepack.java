@@ -21,6 +21,7 @@ import cat.tabbie.sdk.revision.Image;
 import cat.tabbie.sdk.target.Label;
 import cat.tabbie.sdk.target.Parity;
 import cat.tabbie.sdk.tree.Address;
+import cat.tabbie.sdk.tree.Reason;
 import cat.tabbie.sdk.tree.Violation;
 import lombok.NonNull;
 
@@ -49,7 +50,7 @@ public sealed interface Resourcepack extends Artifact {
      * @return validated immutable images
      * @throws IOException when the pack cannot be captured
      * @throws Violation   when the model does not allow the file, such as
-     *                     {@link Violation.Unplaced} when no directory
+     *                     {@link Reason.Placement.Unplaced} when no directory
      *                     accepts Java resource packs
      */
     @Install
@@ -203,18 +204,18 @@ public sealed interface Resourcepack extends Artifact {
      *
      * @param context the work, and where Bedrock resource packs go in the Cat
      * @return validated immutable images
-     * @throws Capture.Rejection.Malformed   when the pack does not hold
-     *                                       exactly one manifest, or its
-     *                                       manifest declares no identity
+     * @throws Capture.Rejection.Malformed   when the pack does not hold exactly
+     *                                       one manifest, or its manifest
+     *                                       declares no identity
      * @throws Capture.Rejection.Unsupported when the manifest lies more than
      *                                       one folder deep, or writes the
      *                                       pack's version as a string
-     * @throws IOException                   when the pack cannot be captured
-     *                                       or is refused
-     * @throws Violation                     when the model does not allow
-     *                                       the file, such as
-     *                                       {@link Violation.Unplaced} when
-     *                                       no directory accepts Bedrock
+     * @throws IOException                   when the pack cannot be captured or
+     *                                       is refused
+     * @throws Violation                     when the model does not allow the
+     *                                       file, such as
+     *                                       {@link Reason.Placement.Unplaced}
+     *                                       when no directory accepts Bedrock
      *                                       resource packs
      */
     @Install

@@ -12,6 +12,7 @@ import cat.tabbie.sdk.platform.Describe;
 import cat.tabbie.sdk.revision.Image;
 import cat.tabbie.sdk.target.Label;
 import cat.tabbie.sdk.target.Parity;
+import cat.tabbie.sdk.tree.Reason;
 import cat.tabbie.sdk.tree.Violation;
 import lombok.NonNull;
 
@@ -38,9 +39,9 @@ public sealed interface Modpack extends Artifact {
    * @param context the work, and where modpacks go in the Cat
    * @return validated immutable images
    * @throws IOException when the modpack cannot be captured or is refused
-   * @throws Violation   when the model does not allow a file where the
-   *                     modpack puts it, such as {@link Violation.Unplaced}
-   *                     when no directory accepts modpacks
+   * @throws Violation   when the model does not allow a file where the modpack
+   *                     puts it, such as {@link Reason.Placement.Unplaced} when
+   *                     no directory accepts modpacks
    */
   @Install
   default Set<Image<?>> installRoot(@NonNull Install.Context context) throws IOException {

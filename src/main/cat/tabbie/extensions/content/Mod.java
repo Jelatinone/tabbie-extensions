@@ -12,6 +12,7 @@ import cat.tabbie.sdk.platform.Describe;
 import cat.tabbie.sdk.revision.Image;
 import cat.tabbie.sdk.target.Label;
 import cat.tabbie.sdk.target.Parity;
+import cat.tabbie.sdk.tree.Reason;
 import cat.tabbie.sdk.tree.Violation;
 import lombok.NonNull;
 
@@ -31,8 +32,8 @@ public sealed interface Mod extends Artifact {
    * @return validated immutable images
    * @throws IOException when the mod cannot be captured
    * @throws Violation   when the model does not allow the file, such as
-   *                     {@link Violation.Unplaced} when no directory accepts
-   *                     mods
+   *                     {@link Reason.Placement.Unplaced} when no directory
+   *                     accepts mods
    */
   @Install
   default Set<Image<?>> installRoot(@NonNull Install.Context context) throws IOException {

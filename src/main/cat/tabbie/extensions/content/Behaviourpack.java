@@ -21,6 +21,7 @@ import cat.tabbie.sdk.revision.Image;
 import cat.tabbie.sdk.target.Label;
 import cat.tabbie.sdk.target.Parity;
 import cat.tabbie.sdk.tree.Address;
+import cat.tabbie.sdk.tree.Reason;
 import cat.tabbie.sdk.tree.Violation;
 import lombok.NonNull;
 
@@ -104,12 +105,13 @@ public sealed interface Behaviourpack extends Artifact {
    *                                       declares no identity
    * @throws Capture.Rejection.Unsupported when the manifest writes the pack's
    *                                       version as a string
-   * @throws IOException                   when the pack cannot be captured
-   *                                       or is refused
+   * @throws IOException                   when the pack cannot be captured or
+   *                                       is refused
    * @throws Violation                     when the model does not allow the
    *                                       pack where it goes, such as
-   *                                       {@link Violation.Unplaced} when no
-   *                                       directory accepts behaviour packs
+   *                                       {@link Reason.Placement.Unplaced}
+   *                                       when no directory accepts behaviour
+   *                                       packs
    */
   @Install
   @Applies(to = "bedrock:nukkit-mot")
