@@ -46,11 +46,5 @@ public sealed interface Datapack extends Artifact {
    *                and relations
    */
   record Default(@NonNull Details details) implements Datapack {
-
-    /**
-     * Checks the details are given.
-     */
-    public Default {
-    }
   }
 }

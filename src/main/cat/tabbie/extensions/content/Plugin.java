@@ -45,11 +45,5 @@ public sealed interface Plugin extends Artifact {
    *                and relations
    */
   record Default(@NonNull Details details) implements Plugin {
-
-    /**
-     * Checks the details are given.
-     */
-    public Default {
-    }
   }
 }

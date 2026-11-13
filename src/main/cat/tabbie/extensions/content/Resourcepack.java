@@ -61,12 +61,6 @@ public sealed interface Resourcepack extends Artifact {
      *                and relations
      */
     record Default(@NonNull Details details) implements Java {
-
-      /**
-       * Checks the details are given.
-       */
-      public Default {
-      }
     }
   }
 
@@ -215,12 +209,6 @@ public sealed interface Resourcepack extends Artifact {
      *                and relations
      */
     record Default(@NonNull Details details) implements Bedrock {
-
-      /**
-       * Checks the details are given.
-       */
-      public Default {
-      }
     }
   }
 }

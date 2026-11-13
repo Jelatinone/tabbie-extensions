@@ -51,11 +51,5 @@ public sealed interface Modpack extends Artifact {
    *                and relations
    */
   record Default(@NonNull Details details) implements Modpack {
-
-    /**
-     * Checks the details are given.
-     */
-    public Default {
-    }
   }
 }

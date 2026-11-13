@@ -125,11 +125,5 @@ public sealed interface Behaviourpack extends Artifact {
    *                and relations
    */
   record Default(@NonNull Details details) implements Behaviourpack {
-
-    /**
-     * Checks the details are given.
-     */
-    public Default {
-    }
   }
 }

@@ -43,11 +43,5 @@ public sealed interface Mod extends Artifact {
    *                and relations
    */
   record Default(@NonNull Details details) implements Mod {
-
-    /**
-     * Checks the details are given.
-     */
-    public Default {
-    }
   }
 }
