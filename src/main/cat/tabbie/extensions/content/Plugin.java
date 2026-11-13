@@ -3,15 +3,11 @@ package cat.tabbie.extensions.content;
 import java.io.IOException;
 import java.util.Set;
 
-import cat.tabbie.sdk.catalog.Coordinate;
 import cat.tabbie.sdk.content.Artifact;
 import cat.tabbie.sdk.content.Install;
 import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
-import cat.tabbie.sdk.platform.Describe;
 import cat.tabbie.sdk.revision.Image;
-import cat.tabbie.sdk.target.Label;
-import cat.tabbie.sdk.target.Parity;
 import cat.tabbie.sdk.tree.Reason;
 import cat.tabbie.sdk.tree.Violation;
 import lombok.NonNull;
@@ -45,30 +41,15 @@ public sealed interface Plugin extends Artifact {
   /**
    * A plugin as its provider describes it.
    *
-   * @param coordinates  exact provider file coordinates
-   * @param artifactName non-blank display name
-   * @param source       provider-owned content description
-   * @param labels       nonempty supported targets
-   * @param parity       multiplayer side parity
-   * @param relations    catalog relationships, one per coordinate
+   * @param details the artifact's coordinates, name, source, targets, parity
+   *                and relations
    */
-  record Default(
-      @NonNull Coordinate.File coordinates,
-      @NonNull String artifactName,
-      @NonNull Describe source,
-      @NonNull Set<Label> labels,
-      @NonNull Parity parity,
-      @NonNull Set<Relation> relations) implements Plugin {
+  record Default(@NonNull Details details) implements Plugin {
+
     /**
-     * Copies collections and checks local declarations without reading content.
-     *
-     * @throws IllegalArgumentException when declared support or relations are
-     *                                  invalid
+     * Checks the details are given.
      */
     public Default {
-      labels = Set.copyOf(labels);
-      relations = Set.copyOf(relations);
-      Artifact.validate(coordinates, artifactName, labels, relations);
     }
   }
 }
