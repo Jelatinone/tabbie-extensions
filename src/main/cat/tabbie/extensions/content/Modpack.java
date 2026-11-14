@@ -3,13 +3,14 @@ package cat.tabbie.extensions.content;
 import java.io.IOException;
 import java.util.Set;
 
+import cat.tabbie.extensions.form.Archive;
 import cat.tabbie.sdk.content.Artifact;
-import cat.tabbie.sdk.content.Install;
+import cat.tabbie.sdk.meta.action.Install;
 import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
 import cat.tabbie.sdk.revision.Image;
 import cat.tabbie.sdk.tree.Reason;
-import cat.tabbie.sdk.tree.Violation;
+import cat.tabbie.sdk.tree.Refusal;
 import lombok.NonNull;
 
 /**
@@ -28,20 +29,20 @@ import lombok.NonNull;
 public sealed interface Modpack extends Artifact {
 
   /**
-   * Unpacks the modpack over the directory of the Cat's model that accepts
-   * modpacks, such as the root of a Cat on a mod loader, on vanilla Java, any
-   * Java mod loader, and every Bedrock distribution.
+   * Unpacks the modpack over its head: the directory accepting modpacks, such
+   * as the root of a Cat on a mod loader, on vanilla Java, any Java mod
+   * loader, and every Bedrock distribution.
    *
-   * @param context the work, and where modpacks go in the Cat
-   * @return validated immutable images
-   * @throws IOException when the modpack cannot be captured or is refused
-   * @throws Violation   when the model does not allow a file where the modpack
-   *                     puts it, such as {@link Reason.Placement.Unplaced} when
-   *                     no directory accepts modpacks
+   * @param context the directory accepting modpacks
+   * @return images placing the modpack's files
+   * @throws Refusal     as reading the modpack as a {@link Archive} refuses, such
+   *                     as with {@link Reason.Content.Unsafe} when it holds a
+   *                     path that is not safe to place
+   * @throws IOException when the modpack cannot be read
    */
   @Install
   default Set<Image<?>> installRoot(@NonNull Install.Context context) throws IOException {
-    return context.place().unpack(source());
+    return context.head().receive(source().as(Archive::of));
   }
 
   /**

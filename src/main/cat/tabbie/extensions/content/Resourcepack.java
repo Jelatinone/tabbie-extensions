@@ -3,22 +3,16 @@ package cat.tabbie.extensions.content;
 import static cat.tabbie.sdk.target.Environment.CLIENT;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import cat.tabbie.extensions.form.Archive;
 import cat.tabbie.sdk.content.Artifact;
-import cat.tabbie.sdk.content.Capture;
-import cat.tabbie.sdk.content.Install;
-import cat.tabbie.sdk.form.Json;
+import cat.tabbie.sdk.meta.action.Install;
 import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
-import cat.tabbie.sdk.revision.Chunk;
 import cat.tabbie.sdk.revision.Image;
-import cat.tabbie.sdk.tree.Address;
 import cat.tabbie.sdk.tree.Reason;
-import cat.tabbie.sdk.tree.Violation;
+import cat.tabbie.sdk.tree.Refusal;
 import lombok.NonNull;
 
 /**
@@ -30,28 +24,25 @@ import lombok.NonNull;
 public sealed interface Resourcepack extends Artifact {
 
   /**
-   * Java resource content, placed as one file where a client's layout accepts
-   * it. Servers deliver resource packs themselves, so it installs on clients
-   * alone, and their layouts accept none.
+   * Java resource content, placed as one file where a client accepts it.
+   * Servers deliver resource packs themselves, so it installs on clients
+   * alone.
    */
   @Registered
   @Applies(to = "java:base", environments = CLIENT)
   sealed interface Java extends Resourcepack {
 
     /**
-     * Places the pack as one file named after its source, in the directory
-     * of the Cat's model accepting Java resource packs, on every Java client.
+     * Places the pack as one file named after its source, at its head: the
+     * directory accepting Java resource packs, on every Java client.
      *
-     * @param context the work, and where Java resource packs go in the Cat
-     * @return validated immutable images
-     * @throws IOException when the pack cannot be captured
-     * @throws Violation   when the model does not allow the file, such as
-     *                     {@link Reason.Placement.Unplaced} when no directory
-     *                     accepts Java resource packs
+     * @param context the directory accepting Java resource packs
+     * @return images placing the pack
+     * @throws IOException when the pack's source cannot be described
      */
     @Install
     default Set<Image<?>> installRoot(@NonNull Install.Context context) throws IOException {
-      return context.place().file(source());
+      return context.head().receive(source());
     }
 
     /**
@@ -65,141 +56,98 @@ public sealed interface Resourcepack extends Artifact {
   }
 
   /**
-   * Bedrock resource content. Its files are available to the whole Cat, in
-   * the directory its layout accepts them in. Each distribution loads packs
-   * in its own way, so a pack installs in one of three:
+   * Bedrock resource content. Its files are available to the whole Cat, in the
+   * directory accepting them. Each distribution loads packs in its own way, so
+   * a pack installs in one of three:
    * <ul>
-   * <li>vanilla Bedrock and Endstone load a pack from a folder, and send a
-   * World only the packs its {@link #CONFIGURATION_JSON_FILE_NAME list}
-   * names, by the identity the pack's {@link Manifest manifest}
-   * declares, so the pack is unpacked and listed in each World it applies
-   * to;</li>
-   * <li>Nukkit-MOT and Cloudburst Server load a pack from a folder, and send
-   * every pack they hold, so the pack is unpacked alone;</li>
-   * <li>Cloudburst Nukkit and PowerNukkitX load only archives, and send
-   * every pack they hold, so the pack is placed as the archive it is.</li>
+   * <li>vanilla Bedrock and Endstone load a pack from a folder, so the pack is
+   * unpacked;</li>
+   * <li>Nukkit-MOT and Cloudburst Server load a pack from a folder too, but
+   * read only a version written as numbers;</li>
+   * <li>Cloudburst Nukkit and PowerNukkitX load only archives, so the pack is
+   * placed as the archive it is.</li>
    * </ul>
-   * None of the last four reads a pack whose manifest writes its version as
-   * a string, so such a pack is refused there before anything is placed.
-   * Uninstalling a pack reverses its install: its files are deleted, and its
-   * entry is removed from each list wherever the entry is, whatever other
-   * packs did to the list since; the list itself stays.
+   * None of the last four reads a pack whose {@link Manifest manifest} writes
+   * its version as a string, so such a pack is refused there before anything
+   * is placed. Vanilla Bedrock and Endstone send a World only the packs its
+   * pack list names; that list is kept consistent with the packs present by
+   * its own form, not by the install.
    */
   @Registered
   sealed interface Bedrock extends Resourcepack {
 
     /**
-     * Name of the file in a World's namespace listing the resource packs the
-     * World loads: a JSON array of each pack's {@code pack_id} and
-     * {@code version}. An entry names no subpack, so a pack offering
-     * subpacks loads its base pack, and players choose a subpack themselves.
-     * A subpack is part of its pack, not an artifact of its own.
-     */
-    String CONFIGURATION_JSON_FILE_NAME = "world_resource_packs.json";
-
-    /**
      * Unpacks the pack into a directory of its own, named by its artifact
-     * identity, beneath the directory of the Cat's model accepting Bedrock
-     * resource packs, and appends its entry to the
-     * {@link #CONFIGURATION_JSON_FILE_NAME list} of each World, on vanilla
-     * Bedrock and Endstone. Both load a pack from a folder, and send a World
-     * only the packs its list names. Only the folder holding the pack's
+     * identity, beneath the directory accepting Bedrock resource packs, on
+     * vanilla Bedrock and Endstone. Only the folder holding the pack's
      * manifest is unpacked, so a pack wrapped in a folder of its own unpacks
-     * as if it were not. No World leaves the pack available, and on in no
-     * World.
+     * as if it were not.
      *
-     * @param context the work, its Worlds, and where Bedrock resource packs
-     *                go in the Cat
-     * @return validated immutable images
-     * @throws Capture.Rejection.Malformed when the pack does not hold
-     *                                     exactly one manifest, or its
-     *                                     manifest declares no identity
-     * @throws IOException                 when the pack cannot be captured
-     *                                     or is refused
-     * @throws Violation                   when the model does not allow the
-     *                                     pack where it goes, or a World's
-     *                                     list to be created and edited
+     * @param context the directory accepting Bedrock resource packs
+     * @return images placing the pack's files
+     * @throws Refusal     with {@link Reason.Content.Malformed} when the pack
+     *                     does not hold exactly one manifest, or its manifest
+     *                     declares no identity, or as reading the pack as a
+     *                     {@link Archive} refuses
+     * @throws IOException when the pack cannot be read
      */
     @Install
     @Applies(to = {"bedrock:vanilla", "bedrock:endstone"})
-    default Set<Image<?>> installListedRoot(@NonNull Install.Context context) throws IOException {
-      List<Capture.Entry> entries = context.capture().inspect(source());
-      Manifest manifest = Manifest.in(entries);
-      List<Chunk> entry = List.of(manifest.listed());
-
-      Set<Image<?>> files = context.place().unpack(entries, manifest.root(), artifactId().id().toString());
-      Set<Image<?>> listings = context.worlds().stream()
-          .<Image<?>>map(world -> world.namespace().configure(Address.of(CONFIGURATION_JSON_FILE_NAME),
-              new Json(), entry))
-          .collect(Collectors.toUnmodifiableSet());
-      return Stream.concat(files.stream(), listings.stream())
-          .collect(Collectors.toUnmodifiableSet());
+    default Set<Image<?>> installRoot(@NonNull Install.Context context) throws IOException {
+      Manifest manifest = Manifest.in(source().as(Archive::of));
+      return context.head().directory(artifactId().id().toString()).receive(manifest.folder());
     }
 
     /**
      * Unpacks the pack into a directory of its own, named by its artifact
-     * identity, beneath the directory of the Cat's model accepting Bedrock
-     * resource packs, on Nukkit-MOT and Cloudburst Server. Both load a pack
-     * from a folder and send every pack they hold, so no World lists it. Only
-     * the folder holding the pack's manifest is unpacked, so a pack wrapped
-     * in folders of its own unpacks as if it were not, however deep. The
-     * manifest is read first, so a pack neither could load is refused before
-     * anything is placed.
+     * identity, beneath the directory accepting Bedrock resource packs, on
+     * Nukkit-MOT and Cloudburst Server. The manifest is read first, so a pack
+     * the server could not load is refused before anything is placed.
      *
-     * @param context the work, and where Bedrock resource packs go in the Cat
-     * @return validated immutable images
-     * @throws Capture.Rejection.Malformed   when the pack does not hold
-     *                                       exactly one manifest, or its
-     *                                       manifest declares no identity
-     * @throws Capture.Rejection.Unsupported when the manifest writes the
-     *                                       pack's version as a string
-     * @throws IOException                   when the pack cannot be captured
-     *                                       or is refused
-     * @throws Violation                     when the model does not allow
-     *                                       the pack where it goes
+     * @param context the directory accepting Bedrock resource packs
+     * @return images placing the pack's files
+     * @throws Refusal     with {@link Reason.Content.Malformed} when the pack
+     *                     does not hold exactly one manifest, or its manifest
+     *                     declares no identity,
+     *                     {@link Reason.Content.Unsupported} when the manifest
+     *                     writes the pack's version as a string, or as reading
+     *                     the pack as a {@link Archive} refuses
+     * @throws IOException when the pack cannot be read
      */
     @Install
     @Applies(to = {"bedrock:cloudburst", "bedrock:nukkit-mot"})
     default Set<Image<?>> installUnpackedRoot(@NonNull Install.Context context) throws IOException {
-      List<Capture.Entry> entries = context.capture().inspect(source());
-      Manifest manifest = Manifest.in(entries)
+      Manifest manifest = Manifest.in(source().as(Archive::of))
           .requireNumbered();
-      return context.place().unpack(entries, manifest.root(), artifactId().id().toString());
+      return context.head().directory(artifactId().id().toString()).receive(manifest.folder());
     }
 
     /**
-     * Places the pack as the archive it is, named by its artifact identity as
-     * {@code <id>.mcpack}, in the directory of the Cat's model accepting
-     * Bedrock resource packs, on Cloudburst Nukkit and PowerNukkitX. Both load
-     * only archives, find a manifest at an archive's root or one folder deep,
-     * and send every pack they hold. The name has the extension Cloudburst
-     * Nukkit matches exactly, and two packs sharing a file name never collide.
-     * The manifest is read first, so a pack neither could load is refused
-     * before anything is placed.
+     * Places the pack as one archive, named by its artifact identity with the
+     * {@code .mcpack} extension, in the directory accepting Bedrock resource
+     * packs, on Cloudburst Nukkit and PowerNukkitX. They read the manifest only
+     * at the archive's root or one folder down, and only a version written as
+     * numbers, so the manifest is read first and a pack the server could not
+     * load is refused before anything is placed.
      *
-     * @param context the work, and where Bedrock resource packs go in the Cat
-     * @return validated immutable images
-     * @throws Capture.Rejection.Malformed   when the pack does not hold exactly
-     *                                       one manifest, or its manifest
-     *                                       declares no identity
-     * @throws Capture.Rejection.Unsupported when the manifest lies more than
-     *                                       one folder deep, or writes the
-     *                                       pack's version as a string
-     * @throws IOException                   when the pack cannot be captured or
-     *                                       is refused
-     * @throws Violation                     when the model does not allow the
-     *                                       file, such as
-     *                                       {@link Reason.Placement.Unplaced}
-     *                                       when no directory accepts Bedrock
-     *                                       resource packs
+     * @param context the directory accepting Bedrock resource packs
+     * @return images placing the archive
+     * @throws Refusal     with {@link Reason.Content.Malformed} when the pack
+     *                     does not hold exactly one manifest, or its manifest
+     *                     declares no identity,
+     *                     {@link Reason.Content.Unsupported} when the manifest
+     *                     lies deeper or writes the pack's version as a
+     *                     string, or as reading the pack as a {@link Archive}
+     *                     refuses
+     * @throws IOException when the pack cannot be read
      */
     @Install
     @Applies(to = {"bedrock:cloudburst-nukkit", "bedrock:power-nukkit"})
     default Set<Image<?>> installArchivedRoot(@NonNull Install.Context context) throws IOException {
-      Manifest.in(context.capture().inspect(source()))
+      Manifest.in(source().as(Archive::of))
           .requireDepth(1)
           .requireNumbered();
-      return context.place().file(source(), Address.of(String.format("%s.mcpack", artifactId().id())));
+      return context.head().receive(source(), String.format("%s.mcpack", artifactId().id()));
     }
 
     /**

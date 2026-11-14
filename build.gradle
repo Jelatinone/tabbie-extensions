@@ -50,6 +50,7 @@ lombok {
 
 dependencies {
   api("cat.tabbie:tabbie-sdk:${sdkVersion}")
+  api('tools.jackson.core:jackson-databind:3.2.3')
 
   // The SDK's processors check this module's contributions and generate its registration
   annotationProcessor("cat.tabbie:tabbie-sdk:${sdkVersion}")

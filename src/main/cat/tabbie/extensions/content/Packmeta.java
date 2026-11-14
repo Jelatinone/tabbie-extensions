@@ -3,125 +3,154 @@ package cat.tabbie.extensions.content;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
-import cat.tabbie.sdk.content.Capture;
-import cat.tabbie.sdk.content.Descriptor;
-import cat.tabbie.sdk.form.Json;
-import cat.tabbie.sdk.form.Unreadable;
-import cat.tabbie.sdk.platform.Describe;
-import cat.tabbie.sdk.tree.Address;
+import cat.tabbie.extensions.form.Json;
+import cat.tabbie.sdk.tree.Reason;
+import cat.tabbie.sdk.tree.Refusal;
+import cat.tabbie.sdk.tree.Shape;
+import lombok.AccessLevel;
 import lombok.NonNull;
+import lombok.experimental.FieldDefaults;
 import tools.jackson.databind.JsonNode;
 
 /**
  * What a Java pack, a datapack or a resource pack, declares in its
- * {@code pack.mcmeta}: the pack formats it supports, and its description.
- * The formats are read from the newest fields the file declares:
+ * {@code pack.mcmeta}: the pack formats it supports, and its description. The
+ * formats are read from the newest fields the file declares:
  * {@code min_format} and {@code max_format}, each a major number or a major
  * and minor pair; otherwise {@code supported_formats}, a number, a
- * {@code [min, max]} pair or a {@code min_inclusive} and
- * {@code max_inclusive} object; otherwise the single {@code pack_format}. A
- * minor number left out is zero.
- *
- * @param root        folder the file lies in, where the pack's files are
- * @param oldest      oldest pack format the pack supports
- * @param newest      newest pack format the pack supports, no older than
- *                    the oldest
- * @param description the pack's description as the file writes it, a text
- *                    component, or a missing node when it declares none
+ * {@code [min, max]} pair or a {@code min_inclusive} and {@code max_inclusive}
+ * object; otherwise the single {@code pack_format}. A minor number left out is
+ * zero. The folder the file lies in holds the pack's files.
  */
-public record Packmeta(
-    @NonNull Address root,
-    @NonNull Format oldest,
-    @NonNull Format newest,
-    @NonNull JsonNode description) implements Descriptor {
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public final class Packmeta extends Json {
 
   /**
-   * Name of the file a Java pack declares itself in.
+   * The file a pack's metadata is named.
    */
   public static final String FILE = "pack.mcmeta";
 
-  /**
-   * Copies the description, and checks the formats are in order.
-   *
-   * @throws IllegalArgumentException when the newest format is older than
-   *                                  the oldest
-   */
-  public Packmeta {
-    description = description.deepCopy();
-    if (newest.compareTo(oldest) < 0) {
-      throw new IllegalArgumentException("A pack's newest supported format is no older than its oldest.");
-    }
+  Format oldest;
+
+  Format newest;
+
+  JsonNode description;
+
+  private Packmeta(Shape shape, JsonNode tree, Format oldest, Format newest, JsonNode description) {
+    super(shape, tree);
+    this.oldest = oldest;
+    this.newest = newest;
+    this.description = description.deepCopy();
   }
 
   /**
-   * Reads what a pack's {@code pack.mcmeta} declares.
+   * Reads a pack's {@code pack.mcmeta}.
    *
-   * @param meta the pack's {@code pack.mcmeta}, at its path within the
-   *             pack's archive or directory
-   * @return the declared formats and description
-   * @throws Capture.Rejection.Malformed when the file is not JSON, or
-   *                                     declares no formats it supports
-   * @throws IOException                 when the file cannot be read
+   * @param shape the file
+   * @return the pack's metadata
+   * @throws Refusal     with {@link Reason.Content.Unreadable} when the file
+   *                     is not JSON, or {@link Reason.Content.Malformed} when
+   *                     it does not declare the formats the pack supports, or
+   *                     its newest is older than its oldest
+   * @throws IOException when the file cannot be read
    */
-  public static Packmeta of(@NonNull Describe meta) throws IOException {
-    JsonNode pack;
+  public static Packmeta of(@NonNull Shape shape) throws IOException {
+    JsonNode tree = read(shape, Packmeta.class);
+    JsonNode pack = tree.path("pack");
+    JsonNode description = pack.path("description");
+    JsonNode supported = pack.path("supported_formats");
     try {
-      pack = new Json().readTree(meta).path("pack");
-    } catch (Unreadable unreadable) {
-      throw new Capture.Rejection.Malformed("A pack's pack.mcmeta is not readable JSON.", unreadable);
-    }
-    try {
-      Address root = meta.path().parent().orElse(Address.root());
+      Format oldest;
+      Format newest;
       if (pack.has("min_format") && pack.has("max_format")) {
-        return new Packmeta(root, Format.of(pack.get("min_format")), Format.of(pack.get("max_format")),
-            pack.path("description"));
+        oldest = Format.of(pack.get("min_format"));
+        newest = Format.of(pack.get("max_format"));
+      } else if (supported.isObject()) {
+        oldest = Format.of(supported.path("min_inclusive"));
+        newest = Format.of(supported.path("max_inclusive"));
+      } else if (supported.isArray()) {
+        oldest = Format.of(supported.path(0));
+        newest = Format.of(supported.path(1));
+      } else {
+        oldest = Format.of(supported.isMissingNode() ? pack.path("pack_format") : supported);
+        newest = oldest;
       }
-      JsonNode supported = pack.path("supported_formats");
-      if (supported.isObject()) {
-        return new Packmeta(root, Format.of(supported.path("min_inclusive")),
-            Format.of(supported.path("max_inclusive")), pack.path("description"));
+      if (newest.compareTo(oldest) < 0) {
+        throw new IllegalArgumentException("A pack's newest supported format is no older than its oldest.");
       }
-      if (supported.isArray()) {
-        return new Packmeta(root, Format.of(supported.path(0)), Format.of(supported.path(1)),
-            pack.path("description"));
-      }
-      Format only = Format.of(supported.isMissingNode() ? pack.path("pack_format") : supported);
-      return new Packmeta(root, only, only, pack.path("description"));
+      return new Packmeta(shape, tree, oldest, newest, description);
     } catch (IllegalArgumentException exception) {
-      throw new Capture.Rejection.Malformed("A pack's pack.mcmeta declares the formats it supports.", exception);
+      throw new Refusal(new Reason.Content.Malformed(shape, Packmeta.class,
+          "It declares the pack formats it supports, the newest no older than the oldest."), exception);
     }
   }
 
   /**
-   * Finds and reads the one {@code pack.mcmeta} among the entries of a
-   * pack's archive, wherever in the archive it lies. The game loads a pack
-   * only when the file lies at its archive's root, so a {@link #root() root}
-   * other than the root address marks a pack wrapped in a folder of its own.
+   * Reads the one {@code pack.mcmeta} a pack holds anywhere beneath a
+   * directory, such as an archive.
    *
-   * @param entries file entries of the pack's archive
-   * @return the declared formats and description, and where the pack lies
-   * @throws Capture.Rejection.Malformed when the archive holds no
-   *                                     {@code pack.mcmeta} or several, or
-   *                                     the file is malformed
-   * @throws IOException                 when the file cannot be read
+   * @param pack the directory holding the pack
+   * @return the pack's metadata
+   * @throws Refusal     with {@link Reason.Content.Malformed} when the pack
+   *                     holds none or several, or as {@link #of(Shape)}
+   *                     refuses
+   * @throws IOException when the pack cannot be read
    */
-  public static Packmeta in(@NonNull List<Capture.Entry> entries) throws IOException {
-    List<Capture.Entry> metas = entries.stream()
-        .filter(entry -> entry.path().fileName().equals(Optional.of(FILE)))
-        .toList();
+  public static Packmeta in(@NonNull Shape.Directory pack) throws IOException {
+    List<Shape.File> metas = pack.find(FILE);
     if (metas.size() != 1) {
-      throw new Capture.Rejection.Malformed("A pack declares exactly one pack.mcmeta.", null);
+      throw new Refusal(new Reason.Content.Malformed(pack, Packmeta.class,
+          "A pack declares exactly one pack.mcmeta."));
     }
-    return of(metas.getFirst());
+    return metas.getFirst().as(Packmeta::of);
+  }
+
+  /**
+   * Returns the oldest pack format the pack supports.
+   *
+   * @return the oldest format
+   */
+  @NonNull
+  public Format oldest() {
+    return oldest;
+  }
+
+  /**
+   * Returns the newest pack format the pack supports.
+   *
+   * @return the newest format, no older than the oldest
+   */
+  @NonNull
+  public Format newest() {
+    return newest;
+  }
+
+  /**
+   * Returns the pack's description as the file writes it.
+   *
+   * @return a text component, or a missing node when it declares none
+   */
+  @NonNull
+  public JsonNode description() {
+    return description.deepCopy();
+  }
+
+  /**
+   * Returns the folder the file lies in, which holds the pack's files.
+   *
+   * @return the pack's folder
+   */
+  @NonNull
+  public Shape.Directory folder() {
+    return shape.parent().orElseThrow();
   }
 
   /**
    * Whether the pack supports a pack format.
    *
-   * @param format pack format of a game version
-   * @return whether it lies between the oldest and newest formats supported
+   * @param format a pack format
+   * @return true when it lies between the oldest and newest, inclusive
    */
   public boolean supports(@NonNull Format format) {
     return oldest.compareTo(format) <= 0 && format.compareTo(newest) <= 0;

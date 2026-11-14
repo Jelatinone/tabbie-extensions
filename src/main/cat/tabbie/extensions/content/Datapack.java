@@ -6,11 +6,10 @@ import java.io.IOException;
 import java.util.Set;
 
 import cat.tabbie.sdk.content.Artifact;
-import cat.tabbie.sdk.content.Install;
+import cat.tabbie.sdk.meta.action.Install;
 import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
 import cat.tabbie.sdk.revision.Image;
-import cat.tabbie.sdk.tree.Violation;
 import lombok.NonNull;
 
 /**
@@ -23,20 +22,19 @@ import lombok.NonNull;
 public sealed interface Datapack extends Artifact {
 
   /**
-   * Places the datapack as one file named after its source in each World of
-   * the context, in the World's directory accepting datapacks, on every Java
-   * distribution. The game loads a zipped datapack as it is, and unpacking
-   * one wrapped in a folder of its own would bury its {@code pack.mcmeta} too
-   * deep to load.
+   * Places the datapack as one file named after its source in a World, at its
+   * head: the World's directory accepting datapacks, on every Java
+   * distribution. Core calls it once for each World. The game loads a zipped
+   * datapack as it is, and unpacking one wrapped in a folder of its own would
+   * bury its {@code pack.mcmeta} too deep to load.
    *
-   * @param context the work, and where datapacks go in every World
-   * @return validated immutable images
-   * @throws IOException when the datapack cannot be captured
-   * @throws Violation   when the model does not allow the file in a World
+   * @param context the directory accepting datapacks in one World
+   * @return images placing the datapack
+   * @throws IOException when the datapack's source cannot be described
    */
   @Install(NAMESPACES)
   default Set<Image<?>> installNamespaces(@NonNull Install.Context context) throws IOException {
-    return context.place().file(source());
+    return context.head().receive(source());
   }
 
   /**
