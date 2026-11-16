@@ -5,9 +5,11 @@ import java.util.Set;
 
 import cat.tabbie.sdk.content.Artifact;
 import cat.tabbie.sdk.meta.action.Install;
+import cat.tabbie.sdk.meta.action.Place;
 import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
 import cat.tabbie.sdk.revision.Image;
+import cat.tabbie.sdk.tree.Node;
 import lombok.NonNull;
 
 /**
@@ -19,6 +21,17 @@ import lombok.NonNull;
 public sealed interface Mod extends Artifact {
 
   /**
+   * Places mods in {@code mods/} at the root, on every Java mod loader.
+   *
+   * @param context the Cat's root
+   * @return the directory accepting mods
+   */
+  @Place
+  static Node.Directory placeRoot(@NonNull Place.Context context) {
+    return context.head().directory("mods");
+  }
+
+  /**
    * Places the mod as one file named after its source, at its head: the
    * directory accepting mods, on every Java mod loader.
    *
@@ -27,7 +40,7 @@ public sealed interface Mod extends Artifact {
    * @throws IOException when the mod's source cannot be described
    */
   @Install
-  default Set<Image<?>> installRoot(@NonNull Install.Context context) throws IOException {
+  default Set<Image<?>> install(@NonNull Install.Context context) throws IOException {
     return context.head().receive(source());
   }
 

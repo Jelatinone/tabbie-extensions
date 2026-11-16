@@ -16,13 +16,13 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 
 import cat.tabbie.sdk.form.Form;
-import cat.tabbie.sdk.model.Rule;
 import cat.tabbie.sdk.tree.Address;
 import cat.tabbie.sdk.tree.Describe;
 import cat.tabbie.sdk.tree.Entry;
 import cat.tabbie.sdk.tree.Lease;
 import cat.tabbie.sdk.tree.Reason;
 import cat.tabbie.sdk.tree.Refusal;
+import cat.tabbie.sdk.tree.Rule;
 import cat.tabbie.sdk.tree.Shape;
 import cat.tabbie.sdk.tree.State;
 import lombok.AccessLevel;

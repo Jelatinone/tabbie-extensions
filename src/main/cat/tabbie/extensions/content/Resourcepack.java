@@ -8,9 +8,11 @@ import java.util.Set;
 import cat.tabbie.extensions.form.Archive;
 import cat.tabbie.sdk.content.Artifact;
 import cat.tabbie.sdk.meta.action.Install;
+import cat.tabbie.sdk.meta.action.Place;
 import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
 import cat.tabbie.sdk.revision.Image;
+import cat.tabbie.sdk.tree.Node;
 import cat.tabbie.sdk.tree.Reason;
 import cat.tabbie.sdk.tree.Refusal;
 import lombok.NonNull;
@@ -33,6 +35,18 @@ public sealed interface Resourcepack extends Artifact {
   sealed interface Java extends Resourcepack {
 
     /**
+     * Places Java resource packs in {@code resourcepacks/} at the root, on
+     * every Java client.
+     *
+     * @param context the Cat's root
+     * @return the directory accepting Java resource packs
+     */
+    @Place
+    static Node.Directory placeRoot(@NonNull Place.Context context) {
+      return context.head().directory("resourcepacks");
+    }
+
+    /**
      * Places the pack as one file named after its source, at its head: the
      * directory accepting Java resource packs, on every Java client.
      *
@@ -41,7 +55,7 @@ public sealed interface Resourcepack extends Artifact {
      * @throws IOException when the pack's source cannot be described
      */
     @Install
-    default Set<Image<?>> installRoot(@NonNull Install.Context context) throws IOException {
+    default Set<Image<?>> install(@NonNull Install.Context context) throws IOException {
       return context.head().receive(source());
     }
 
@@ -77,6 +91,19 @@ public sealed interface Resourcepack extends Artifact {
   sealed interface Bedrock extends Resourcepack {
 
     /**
+     * Places Bedrock resource packs in {@code resource_packs/} at the root, on
+     * every Bedrock distribution.
+     *
+     * @param context the Cat's root
+     * @return the directory accepting Bedrock resource packs
+     */
+    @Place
+    @Applies(to = "bedrock:base")
+    static Node.Directory placeRoot(@NonNull Place.Context context) {
+      return context.head().directory("resource_packs");
+    }
+
+    /**
      * Unpacks the pack into a directory of its own, named by its artifact
      * identity, beneath the directory accepting Bedrock resource packs, on
      * vanilla Bedrock and Endstone. Only the folder holding the pack's
@@ -87,13 +114,13 @@ public sealed interface Resourcepack extends Artifact {
      * @return images placing the pack's files
      * @throws Refusal     with {@link Reason.Content.Malformed} when the pack
      *                     does not hold exactly one manifest, or its manifest
-     *                     declares no identity, or as reading the pack as a
+     *                     declares no identity, or as reading the pack as an
      *                     {@link Archive} refuses
      * @throws IOException when the pack cannot be read
      */
     @Install
     @Applies(to = {"bedrock:vanilla", "bedrock:endstone"})
-    default Set<Image<?>> installRoot(@NonNull Install.Context context) throws IOException {
+    default Set<Image<?>> install(@NonNull Install.Context context) throws IOException {
       Manifest manifest = Manifest.in(source().as(Archive::of));
       return context.head().directory(artifactId().id().toString()).receive(manifest.folder());
     }
@@ -111,12 +138,12 @@ public sealed interface Resourcepack extends Artifact {
      *                     declares no identity,
      *                     {@link Reason.Content.Unsupported} when the manifest
      *                     writes the pack's version as a string, or as reading
-     *                     the pack as a {@link Archive} refuses
+     *                     the pack as an {@link Archive} refuses
      * @throws IOException when the pack cannot be read
      */
     @Install
     @Applies(to = {"bedrock:cloudburst", "bedrock:nukkit-mot"})
-    default Set<Image<?>> installUnpackedRoot(@NonNull Install.Context context) throws IOException {
+    default Set<Image<?>> installUnpacked(@NonNull Install.Context context) throws IOException {
       Manifest manifest = Manifest.in(source().as(Archive::of))
           .requireNumbered();
       return context.head().directory(artifactId().id().toString()).receive(manifest.folder());
@@ -137,13 +164,13 @@ public sealed interface Resourcepack extends Artifact {
      *                     declares no identity,
      *                     {@link Reason.Content.Unsupported} when the manifest
      *                     lies deeper or writes the pack's version as a
-     *                     string, or as reading the pack as a {@link Archive}
+     *                     string, or as reading the pack as an {@link Archive}
      *                     refuses
      * @throws IOException when the pack cannot be read
      */
     @Install
     @Applies(to = {"bedrock:cloudburst-nukkit", "bedrock:power-nukkit"})
-    default Set<Image<?>> installArchivedRoot(@NonNull Install.Context context) throws IOException {
+    default Set<Image<?>> installArchived(@NonNull Install.Context context) throws IOException {
       Manifest.in(source().as(Archive::of))
           .requireDepth(1)
           .requireNumbered();

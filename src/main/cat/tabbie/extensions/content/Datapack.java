@@ -7,19 +7,33 @@ import java.util.Set;
 
 import cat.tabbie.sdk.content.Artifact;
 import cat.tabbie.sdk.meta.action.Install;
+import cat.tabbie.sdk.meta.action.Place;
 import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
 import cat.tabbie.sdk.revision.Image;
+import cat.tabbie.sdk.tree.Node;
 import lombok.NonNull;
 
 /**
- * Java world data content, which belongs to a World and installs into the
- * Worlds its context names. Constructors do not inspect pack metadata or
- * discover world directories.
+ * Java world data content, which belongs to a World and is placed in every
+ * World. Constructors do not inspect pack metadata or discover world
+ * directories.
  */
 @Registered
 @Applies(to = "java:base")
 public sealed interface Datapack extends Artifact {
+
+  /**
+   * Places datapacks in each World's {@code datapacks/}, on every Java
+   * distribution. Core calls it once for each World.
+   *
+   * @param context the head of one World
+   * @return the directory accepting datapacks in that World
+   */
+  @Place(NAMESPACES)
+  static Node.Directory placeNamespaces(@NonNull Place.Context context) {
+    return context.head().directory("datapacks");
+  }
 
   /**
    * Places the datapack as one file named after its source in a World, at its
@@ -32,8 +46,8 @@ public sealed interface Datapack extends Artifact {
    * @return images placing the datapack
    * @throws IOException when the datapack's source cannot be described
    */
-  @Install(NAMESPACES)
-  default Set<Image<?>> installNamespaces(@NonNull Install.Context context) throws IOException {
+  @Install
+  default Set<Image<?>> install(@NonNull Install.Context context) throws IOException {
     return context.head().receive(source());
   }
 
