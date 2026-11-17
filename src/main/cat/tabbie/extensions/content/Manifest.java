@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 import cat.tabbie.extensions.form.Json;
-import cat.tabbie.sdk.tree.Reason;
-import cat.tabbie.sdk.tree.Refusal;
+import cat.tabbie.sdk.failure.Reason;
+import cat.tabbie.sdk.failure.Refusal;
 import cat.tabbie.sdk.tree.Shape;
 import lombok.AccessLevel;
 import lombok.NonNull;

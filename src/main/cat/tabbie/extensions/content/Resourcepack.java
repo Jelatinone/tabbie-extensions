@@ -7,14 +7,14 @@ import java.util.Set;
 
 import cat.tabbie.extensions.form.Archive;
 import cat.tabbie.sdk.content.Artifact;
+import cat.tabbie.sdk.failure.Reason;
+import cat.tabbie.sdk.failure.Refusal;
 import cat.tabbie.sdk.meta.action.Install;
 import cat.tabbie.sdk.meta.action.Place;
 import cat.tabbie.sdk.meta.attribute.Applies;
 import cat.tabbie.sdk.meta.registry.Registered;
 import cat.tabbie.sdk.revision.Image;
 import cat.tabbie.sdk.tree.Node;
-import cat.tabbie.sdk.tree.Reason;
-import cat.tabbie.sdk.tree.Refusal;
 import lombok.NonNull;
 
 /**
