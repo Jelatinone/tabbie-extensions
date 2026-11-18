@@ -144,8 +144,7 @@ public sealed interface Resourcepack extends Artifact {
     @Install
     @Applies(to = {"bedrock:cloudburst", "bedrock:nukkit-mot"})
     default Set<Image<?>> installUnpacked(@NonNull Install.Context context) throws IOException {
-      Manifest manifest = Manifest.in(source().as(Archive::of))
-          .requireNumbered();
+      Manifest manifest = Manifest.Numbered.in(source().as(Archive::of));
       return context.head().directory(artifactId().id().toString()).receive(manifest.folder());
     }
 
@@ -171,9 +170,7 @@ public sealed interface Resourcepack extends Artifact {
     @Install
     @Applies(to = {"bedrock:cloudburst-nukkit", "bedrock:power-nukkit"})
     default Set<Image<?>> installArchived(@NonNull Install.Context context) throws IOException {
-      Manifest.in(source().as(Archive::of))
-          .requireDepth(1)
-          .requireNumbered();
+      Manifest.Numbered.in(source().as(Archive::of), 1);
       return context.head().receive(source(), String.format("%s.mcpack", artifactId().id()));
     }
 

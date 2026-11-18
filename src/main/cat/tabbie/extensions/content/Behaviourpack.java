@@ -107,8 +107,7 @@ public sealed interface Behaviourpack extends Artifact {
   @Install
   @Applies(to = "bedrock:nukkit-mot")
   default Set<Image<?>> installUnpacked(@NonNull Install.Context context) throws IOException {
-    Manifest manifest = Manifest.in(source().as(Archive::of))
-        .requireNumbered();
+    Manifest manifest = Manifest.Numbered.in(source().as(Archive::of));
     return context.head().directory(artifactId().id().toString()).receive(manifest.folder());
   }
 
